@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/middleware/auth";
+import { withAuth, requireRole } from "@/lib/middleware/auth";
 import db from "@/lib/db";
 import { createFormSchema } from "@/lib/validations/forms";
 
@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withAuth(request, async (authenticatedRequest) => {
+    return requireRole(["admin"])(authenticatedRequest, async (req) => {
     try {
       const body = await request.json();
       
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
       }
 
       const { title, description, fields } = result.data;
-      const admin_id = authenticatedRequest.user.id;
+      const admin_id = req.user.id;
 
       const trx = await db.transaction();
 
@@ -109,5 +110,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    });
   });
 }

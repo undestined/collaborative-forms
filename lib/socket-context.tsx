@@ -16,8 +16,22 @@ interface SocketContextType {
     userId?: string;
   }) => void;
   collaborators: { userId: string; email: string }[];
-  onFieldUpdate: (callback: (data: any) => void) => void;
-  offFieldUpdate: (callback: (data: any) => void) => void;
+  onFieldUpdate: (
+    callback: (data: {
+      responseId: string;
+      fieldId: string;
+      value: string;
+      userId?: string;
+    }) => void
+  ) => void;
+  offFieldUpdate: (
+    callback: (data: {
+      responseId: string;
+      fieldId: string;
+      value: string;
+      userId?: string;
+    }) => void
+  ) => void;
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
@@ -37,31 +51,40 @@ interface SocketProviderProps {
 export function SocketProvider({ children }: SocketProviderProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [collaborators, setCollaborators] = useState<{ userId: string; email: string }[]>([]);
+  const [collaborators, setCollaborators] = useState<
+    { userId: string; email: string }[]
+  >([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const newSocket = io(window.location.origin, {
+    const newSocket = io({
       path: "/socket.io",
       addTrailingSlash: false,
+      transports: ["polling", "websocket"],
+      forceNew: false,
+      reconnection: true,
+      timeout: 20000,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
     });
 
     newSocket.on("connect", () => {
-      console.log("Connected to socket server");
       setIsConnected(true);
     });
 
     newSocket.on("disconnect", () => {
-      console.log("Disconnected from socket server");
       setIsConnected(false);
       setCollaborators([]);
     });
 
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+
     newSocket.on("user-joined", (data: { userId: string; email: string }) => {
-      console.log("User joined:", data);
-      setCollaborators(prev => {
-        const exists = prev.some(c => c.userId === data.userId);
+      setCollaborators((prev) => {
+        const exists = prev.some((c) => c.userId === data.userId);
         if (!exists) {
           return [...prev, data];
         }
@@ -70,8 +93,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     });
 
     newSocket.on("user-left", (data: { userId: string }) => {
-      console.log("User left:", data);
-      setCollaborators(prev => prev.filter(c => c.userId !== data.userId));
+      setCollaborators((prev) => prev.filter((c) => c.userId !== data.userId));
     });
 
     newSocket.on("field-update-error", (error) => {
@@ -88,7 +110,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const joinForm = (formId: string, userId?: string, email?: string) => {
     if (socket && isConnected) {
       socket.emit("join-form", formId);
-      
+
       if (userId && email) {
         socket.emit("user-joined", { formId, userId, email });
       }
@@ -98,7 +120,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const leaveForm = (formId: string, userId?: string) => {
     if (socket && isConnected) {
       socket.emit("leave-form", formId);
-      
+
       if (userId) {
         socket.emit("user-left", { formId, userId });
       }
@@ -117,13 +139,27 @@ export function SocketProvider({ children }: SocketProviderProps) {
     }
   };
 
-  const onFieldUpdate = (callback: (data: any) => void) => {
+  const onFieldUpdate = (
+    callback: (data: {
+      responseId: string;
+      fieldId: string;
+      value: string;
+      userId?: string;
+    }) => void
+  ) => {
     if (socket) {
       socket.on("field-updated", callback);
     }
   };
 
-  const offFieldUpdate = (callback: (data: any) => void) => {
+  const offFieldUpdate = (
+    callback: (data: {
+      responseId: string;
+      fieldId: string;
+      value: string;
+      userId?: string;
+    }) => void
+  ) => {
     if (socket) {
       socket.off("field-updated", callback);
     }
@@ -141,8 +177,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   };
 
   return (
-    <SocketContext.Provider value={value}>
-      {children}
-    </SocketContext.Provider>
+    <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
   );
 }

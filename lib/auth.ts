@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
 import db from "./db";
 
 export interface User {
@@ -81,7 +80,7 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-export async function requireAuth(request?: NextRequest): Promise<User> {
+export async function requireAuth(): Promise<User> {
   const user = await getCurrentUser();
   
   if (!user) {

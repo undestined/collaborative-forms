@@ -14,7 +14,7 @@ export interface FieldUpdateData {
   responseId: string;
   fieldId: string;
   value: string;
-  userId: string;
+  userId?: string;
 }
 
 export interface UserJoinedData {

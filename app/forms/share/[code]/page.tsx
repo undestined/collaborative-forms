@@ -4,18 +4,18 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { FormRenderer } from "@/components/forms/form-renderer";
 import { Form, FormResponse, FieldValue } from "@/types";
-import { SocketProvider } from "@/lib/socket-context";
+import { SocketProvider, useSocketContext } from "@/lib/socket-context";
 
-export default function ShareFormPage() {
+function ShareFormContent() {
   const params = useParams();
   const code = params.code as string;
+  const { isConnected, joinForm, leaveForm, emitFieldUpdate, collaborators, onFieldUpdate, offFieldUpdate } = useSocketContext();
 
   const [form, setForm] = useState<Form | null>(null);
   const [response, setResponse] = useState<FormResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [collaborators] = useState<{ userId: string; email: string }[]>([]);
 
   const fetchForm = useCallback(async () => {
     try {
@@ -48,6 +48,63 @@ export default function ShareFormPage() {
     }
   }, [code, fetchForm]);
 
+  // Join form room when form is loaded and socket is connected
+  useEffect(() => {
+    if (form && isConnected) {
+      joinForm(form.id, "temp-user-id", "temp@email.com");
+    }
+
+    return () => {
+      if (form) {
+        leaveForm(form.id, "temp-user-id");
+      }
+    };
+  }, [form, isConnected, joinForm, leaveForm]);
+
+  // Listen for field updates from other users
+  useEffect(() => {
+    const handleFieldUpdate = (data: { responseId: string; fieldId: string; value: string; userId?: string }) => {
+      console.log("Received field update:", data);
+      setResponse((prev) => {
+        if (!prev) return prev;
+
+        const updatedFieldValues = prev.field_values || [];
+        const existingIndex = updatedFieldValues.findIndex(
+          (fv: FieldValue) => fv.field_id === data.fieldId
+        );
+
+        if (existingIndex >= 0) {
+          updatedFieldValues[existingIndex] = {
+            ...updatedFieldValues[existingIndex],
+            value: data.value,
+            updated_at: new Date(),
+          };
+        } else {
+          updatedFieldValues.push({
+            id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+            response_id: data.responseId,
+            field_id: data.fieldId,
+            value: data.value,
+            updated_by: data.userId,
+            created_at: new Date(),
+            updated_at: new Date(),
+          });
+        }
+
+        return {
+          ...prev,
+          field_values: updatedFieldValues,
+        };
+      });
+    };
+
+    onFieldUpdate(handleFieldUpdate);
+
+    return () => {
+      offFieldUpdate(handleFieldUpdate);
+    };
+  }, [onFieldUpdate, offFieldUpdate]);
+
   const createResponse = async (formId: string) => {
     try {
       const response = await fetch(`/api/forms/${formId}/responses`, {
@@ -70,8 +127,13 @@ export default function ShareFormPage() {
     if (!response || !form) return;
 
     // Emit real-time update via Socket.io
-    // TODO: Add socket context integration here
-    console.log("Field changed:", { fieldId, value, responseId: response.id });
+    emitFieldUpdate({
+      formId: form.id,
+      responseId: response.id,
+      fieldId,
+      value,
+      userId: "temp-user-id", // TODO: Replace with actual user ID
+    });
 
     // Update local state
     setResponse((prev) => {
@@ -90,7 +152,7 @@ export default function ShareFormPage() {
         };
       } else {
         updatedFieldValues.push({
-          id: crypto.randomUUID(),
+          id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
           response_id: response.id,
           field_id: fieldId,
           value,
@@ -176,17 +238,23 @@ export default function ShareFormPage() {
   }
 
   return (
+    <div className="container mx-auto py-8 px-4">
+      <FormRenderer
+        form={form}
+        response={response || undefined}
+        onFieldChange={handleFieldChange}
+        onSubmit={handleSubmit}
+        isLoading={isSubmitting}
+        collaborators={collaborators}
+      />
+    </div>
+  );
+}
+
+export default function ShareFormPage() {
+  return (
     <SocketProvider>
-      <div className="container mx-auto py-8 px-4">
-        <FormRenderer
-          form={form}
-          response={response || undefined}
-          onFieldChange={handleFieldChange}
-          onSubmit={handleSubmit}
-          isLoading={isSubmitting}
-          collaborators={collaborators}
-        />
-      </div>
+      <ShareFormContent />
     </SocketProvider>
   );
 }

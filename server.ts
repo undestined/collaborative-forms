@@ -6,7 +6,7 @@ import db from "./lib/db";
 import type { FieldUpdateData, UserJoinedData, UserLeftData } from "./types/socket";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
+const hostname = "0.0.0.0"; // Bind to all interfaces
 const port = parseInt(process.env.PORT || "3000", 10);
 
 const app = next({ dev, hostname, port });
@@ -16,6 +16,12 @@ app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url!, true);
+      
+      // Skip Next.js handling for Socket.io requests
+      if (parsedUrl.pathname?.startsWith('/socket.io/')) {
+        return;
+      }
+      
       await handle(req, res, parsedUrl);
     } catch (err) {
       console.error("Error occurred handling", req.url, err);
@@ -26,9 +32,11 @@ app.prepare().then(() => {
 
   const io = new Server(httpServer, {
     cors: {
-      origin: dev ? "http://localhost:3000" : process.env.NEXT_PUBLIC_SITE_URL,
+      origin: dev ? ["http://localhost:3000", "http://fedora:3000", "http://127.0.0.1:3000"] : process.env.NEXT_PUBLIC_SITE_URL,
       methods: ["GET", "POST"],
+      credentials: true,
     },
+    transports: ["websocket", "polling"],
   });
 
   io.on("connection", (socket) => {
@@ -65,7 +73,7 @@ app.prepare().then(() => {
             })
             .update({
               value: data.value,
-              updated_by: data.userId,
+              updated_by: data.userId || "anonymous",
               updated_at: new Date(),
             });
         } else {
@@ -73,7 +81,7 @@ app.prepare().then(() => {
             response_id: data.responseId,
             field_id: data.fieldId,
             value: data.value,
-            updated_by: data.userId,
+            updated_by: data.userId || "anonymous",
           });
         }
 

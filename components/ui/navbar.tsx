@@ -37,9 +37,11 @@ export function Navbar() {
               <>
                 {user ? (
                   <>
-                    <Link href="/forms">
-                      <Button variant="ghost">My Forms</Button>
-                    </Link>
+                    {user.role === 'admin' && (
+                      <Link href="/forms">
+                        <Button variant="ghost">My Forms</Button>
+                      </Link>
+                    )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-8 w-8 rounded-full">

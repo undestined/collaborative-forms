@@ -65,22 +65,37 @@ export function FormRenderer({
   };
 
   const formSchema = createSchema();
+  
+  // Initialize default values for all fields to prevent controlled/uncontrolled switching
+  const getDefaultValues = () => {
+    const defaults: Record<string, string> = {};
+    form.fields?.forEach((field: FormFieldType) => {
+      defaults[field.id] = "";
+    });
+    return defaults;
+  };
+
   const formMethods = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {},
+    defaultValues: getDefaultValues(),
   });
 
   useEffect(() => {
     if (response) {
-      const values: Record<string, string | undefined> = {};
+      const values: Record<string, string> = {};
+      // Initialize all fields with empty strings first
+      form.fields?.forEach((field: FormFieldType) => {
+        values[field.id] = "";
+      });
+      // Then override with actual values
       response.field_values?.forEach((fv) => {
         if (fv.field_id) {
-          values[fv.field_id] = fv.value || undefined;
+          values[fv.field_id] = fv.value || "";
         }
       });
       formMethods.reset(values);
     }
-  }, [response, formMethods]);
+  }, [response, formMethods, form.fields]);
 
   const handleFieldChange = (fieldId: string, value: string) => {
     onFieldChange?.(fieldId, value);
@@ -108,6 +123,7 @@ export function FormRenderer({
                       <Textarea
                         placeholder={`Enter ${field.label.toLowerCase()}`}
                         {...formField}
+                        value={formField.value ?? ""}
                         onChange={(e) => {
                           formField.onChange(e);
                           handleFieldChange(fieldId, e.target.value);
@@ -118,7 +134,7 @@ export function FormRenderer({
                   case "select":
                     return (
                       <Select
-                        value={formField.value || ""}
+                        value={formField.value ?? ""}
                         onValueChange={(value) => {
                           formField.onChange(value);
                           handleFieldChange(fieldId, value);
@@ -147,7 +163,7 @@ export function FormRenderer({
                               id={`${fieldId}-${index}`}
                               name={fieldId}
                               value={option}
-                              checked={formField.value === option}
+                              checked={(formField.value ?? "") === option}
                               onChange={(e) => {
                                 formField.onChange(e.target.value);
                                 handleFieldChange(fieldId, e.target.value);
@@ -171,7 +187,7 @@ export function FormRenderer({
                         <input
                           type="checkbox"
                           id={fieldId}
-                          checked={formField.value === "true"}
+                          checked={(formField.value ?? "") === "true"}
                           onChange={(e) => {
                             const value = e.target.checked.toString();
                             formField.onChange(value);
@@ -196,6 +212,7 @@ export function FormRenderer({
                               field.field_type === "date" ? "date" : "text"}
                         placeholder={`Enter ${field.label.toLowerCase()}`}
                         {...formField}
+                        value={formField.value ?? ""}
                         onChange={(e) => {
                           formField.onChange(e);
                           handleFieldChange(fieldId, e.target.value);

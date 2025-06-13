@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Users, FileText, Zap } from "lucide-react";
 import { Navbar } from "@/components/ui/navbar";
+import CreateSection from "@/components/create-section";
 
 export default function Home() {
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       <Navbar />
@@ -14,7 +22,8 @@ export default function Home() {
             Form<span className="text-primary">Sync</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Create and collaborate on forms in real-time. Like Google Docs, but for structured forms.
+            Create and collaborate on forms in real-time. Like Google Docs, but
+            for structured forms.
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/forms">
@@ -36,7 +45,8 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Build beautiful, responsive forms with our intuitive drag-and-drop interface.
+                Build beautiful, responsive forms with our intuitive
+                drag-and-drop interface.
               </CardDescription>
             </CardContent>
           </Card>
@@ -48,7 +58,8 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Work together with your team to fill out forms simultaneously, just like Google Docs.
+                Work together with your team to fill out forms simultaneously,
+                just like Google Docs.
               </CardDescription>
             </CardContent>
           </Card>
@@ -60,23 +71,14 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                See changes instantly as they happen. No more waiting or refreshing required.
+                See changes instantly as they happen. No more waiting or
+                refreshing required.
               </CardDescription>
             </CardContent>
           </Card>
         </div>
 
-        <div className="text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to start collaborating?</h2>
-          <p className="text-muted-foreground mb-8">
-            Join thousands of teams already using FormSync for their collaborative form needs.
-          </p>
-          <Link href="/forms">
-            <Button size="lg" className="text-lg px-12">
-              Create Your First Form
-            </Button>
-          </Link>
-        </div>
+        <CreateSection />
       </div>
     </div>
   );
