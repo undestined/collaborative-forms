@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: formsync
+      POSTGRES_USER: formsync
+      POSTGRES_PASSWORD: formsync_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U formsync"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # FormSync Application
+  app:
+    build: .
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://formsync:formsync_password@postgres:5432/formsync
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./knexfile.ts:/app/knexfile.ts
+      - ./migrations:/app/migrations
+      - ./seeds:/app/seeds
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 10 &&
+        echo 'Running migrations...' &&
+        npx knex migrate:latest &&
+        echo 'Running seeds...' &&
+        npx knex seed:run &&
+        echo 'Starting application...' &&
+        node server.js
+      "
+
+volumes:
+  postgres_data:
