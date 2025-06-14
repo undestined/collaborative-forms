@@ -8,14 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Users, FileText, Zap } from "lucide-react";
-import { Navbar } from "@/components/ui/navbar";
 import CreateSection from "@/components/create-section";
 
 export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
-      <Navbar />
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">

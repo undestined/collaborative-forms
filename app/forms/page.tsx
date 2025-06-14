@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { FormCreator } from "@/components/forms/form-creator";
 import { FormList } from "@/components/forms/form-list";
 import { ProtectedRoute } from "@/components/ui/protected-route";
-import { Navbar } from "@/components/ui/navbar";
 import { Form } from "@/types";
 import { CreateFormData } from "@/lib/validations/forms";
 import { useAuth } from "@/hooks/use-auth";
@@ -98,7 +97,6 @@ export default function FormsPage() {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <Navbar />
       <div className="container mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-8">
         <div>

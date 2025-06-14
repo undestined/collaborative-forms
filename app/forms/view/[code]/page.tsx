@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { FormRenderer } from "@/components/forms/form-renderer";
 import { Form, FormResponse, FieldValue } from "@/types";
 import { SocketProvider, useSocketContext } from "@/lib/socket-context";
-import { ProtectedRoute } from "@/components/ui/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 
 function ShareFormContent() {
@@ -61,17 +60,16 @@ function ShareFormContent() {
 
   // Join form room when form is loaded and socket is connected
   useEffect(() => {
-    console.log(111);
     if (form && isConnected) {
       joinForm(form.id, user?.id, user?.email);
     }
 
     return () => {
       if (form) {
-        leaveForm(form.id, user?.id || "anonymous");
+        leaveForm(form.id, "temp-user-id");
       }
     };
-  }, [form, isConnected, joinForm, leaveForm, user]);
+  }, [form, isConnected, joinForm, leaveForm, user?.email, user?.id]);
 
   // Listen for field updates from other users
   useEffect(() => {
@@ -151,7 +149,7 @@ function ShareFormContent() {
       responseId: response.id,
       fieldId,
       value,
-      userId: user?.id,
+      userId: "temp-user-id", // TODO: Replace with actual user ID
     });
 
     // Update local state
@@ -177,7 +175,7 @@ function ShareFormContent() {
           response_id: response.id,
           field_id: fieldId,
           value,
-          updated_by: user?.id,
+          updated_by: "temp-user", // TODO: Replace with actual user ID
           created_at: new Date(),
           updated_at: new Date(),
         });
@@ -262,11 +260,12 @@ function ShareFormContent() {
     <div className="container mx-auto py-8 px-4">
       <FormRenderer
         form={form}
-        response={response || undefined}
+        response={response ?? undefined}
         onFieldChange={handleFieldChange}
         onSubmit={handleSubmit}
         isLoading={isSubmitting}
         collaborators={collaborators}
+        editable={false}
       />
     </div>
   );
@@ -274,10 +273,8 @@ function ShareFormContent() {
 
 export default function ShareFormPage() {
   return (
-    <ProtectedRoute requireAuth={true}>
-      <SocketProvider>
-        <ShareFormContent />
-      </SocketProvider>
-    </ProtectedRoute>
+    <SocketProvider>
+      <ShareFormContent />
+    </SocketProvider>
   );
 }

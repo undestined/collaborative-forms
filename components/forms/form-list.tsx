@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Edit, Trash2, Share2, Copy, ExternalLink } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Share2,
+  Copy,
+  ExternalLink,
+  EyeIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { Form } from "@/types";
+import Link from "next/link";
 
 interface FormListProps {
   forms: Form[];
@@ -96,7 +104,10 @@ export function FormList({
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {forms.map((form) => (
-          <Card key={form.id} className="hover:shadow-md transition-shadow">
+          <Card
+            className="hover:shadow-md transition-shadow"
+            key={form.id}
+          >
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -118,6 +129,11 @@ export function FormList({
                   Created {new Date(form.created_at).toLocaleDateString()}
                 </div>
                 <div className="flex items-center gap-1">
+                  <Link key={form.id} href={`/forms/view/${form.share_code}`}>
+                    <Button variant="ghost" size="sm" title="View form">
+                      <EyeIcon className="w-4 h-4" />
+                    </Button>
+                  </Link>
                   <Button
                     variant="ghost"
                     size="sm"

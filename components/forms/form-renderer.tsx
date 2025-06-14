@@ -22,6 +22,7 @@ interface FormRendererProps {
   onSubmit?: (values: Record<string, string | undefined>) => void | Promise<void>;
   isLoading?: boolean;
   collaborators?: { userId: string; email: string }[];
+  editable?: boolean;
 }
 
 export function FormRenderer({ 
@@ -30,7 +31,8 @@ export function FormRenderer({
   onFieldChange, 
   onSubmit, 
   isLoading = false,
-  collaborators = []
+  collaborators = [],
+  editable = true
 }: FormRendererProps) {
 
   // Create dynamic schema based on form fields
@@ -128,6 +130,7 @@ export function FormRenderer({
                           formField.onChange(e);
                           handleFieldChange(fieldId, e.target.value);
                         }}
+                        disabled={!editable}
                       />
                     );
                   
@@ -139,6 +142,7 @@ export function FormRenderer({
                           formField.onChange(value);
                           handleFieldChange(fieldId, value);
                         }}
+                        disabled={!editable}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
@@ -169,6 +173,7 @@ export function FormRenderer({
                                 handleFieldChange(fieldId, e.target.value);
                               }}
                               className="w-4 h-4"
+                              disabled={!editable}
                             />
                             <label
                               htmlFor={`${fieldId}-${index}`}
@@ -194,6 +199,7 @@ export function FormRenderer({
                             handleFieldChange(fieldId, value);
                           }}
                           className="w-4 h-4"
+                          disabled={!editable}
                         />
                         <label
                           htmlFor={fieldId}
@@ -217,6 +223,7 @@ export function FormRenderer({
                           formField.onChange(e);
                           handleFieldChange(fieldId, e.target.value);
                         }}
+                        disabled={!editable}
                       />
                     );
                 }
@@ -261,7 +268,7 @@ export function FormRenderer({
             <form onSubmit={formMethods.handleSubmit(handleSubmit)} className="space-y-6">
               {form.fields?.map((field) => renderField(field))}
               
-              {onSubmit && (
+              {onSubmit && editable && (
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? "Submitting..." : "Submit Form"}

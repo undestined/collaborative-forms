@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { io, Socket } from "socket.io-client";
 
 interface SocketContextType {
@@ -60,13 +66,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
     const newSocket = io({
       path: "/socket.io",
-      addTrailingSlash: false,
-      transports: ["polling", "websocket"],
-      forceNew: false,
-      reconnection: true,
-      timeout: 20000,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      transports: ["websocket"],
     });
 
     newSocket.on("connect", () => {
@@ -107,63 +107,78 @@ export function SocketProvider({ children }: SocketProviderProps) {
     };
   }, []);
 
-  const joinForm = (formId: string, userId?: string, email?: string) => {
-    if (socket && isConnected) {
-      socket.emit("join-form", formId);
+  const joinForm = useCallback(
+    (formId: string, userId?: string, email?: string) => {
+      if (socket && isConnected) {
+        socket.emit("join-form", formId);
 
-      if (userId && email) {
-        socket.emit("user-joined", { formId, userId, email });
+        if (userId && email) {
+          socket.emit("user-joined", { formId, userId, email });
+        }
       }
-    }
-  };
+    },
+    [isConnected, socket]
+  );
 
-  const leaveForm = (formId: string, userId?: string) => {
-    if (socket && isConnected) {
-      socket.emit("leave-form", formId);
+  const leaveForm = useCallback(
+    (formId: string, userId?: string) => {
+      if (socket && isConnected) {
+        socket.emit("leave-form", formId);
 
-      if (userId) {
-        socket.emit("user-left", { formId, userId });
+        if (userId) {
+          socket.emit("user-left", { formId, userId });
+        }
       }
-    }
-  };
+    },
+    [isConnected, socket]
+  );
 
-  const emitFieldUpdate = (data: {
-    formId: string;
-    responseId: string;
-    fieldId: string;
-    value: string;
-    userId?: string;
-  }) => {
-    if (socket && isConnected) {
-      socket.emit("field-update", data);
-    }
-  };
-
-  const onFieldUpdate = (
-    callback: (data: {
+  const emitFieldUpdate = useCallback(
+    (data: {
+      formId: string;
       responseId: string;
       fieldId: string;
       value: string;
       userId?: string;
-    }) => void
-  ) => {
-    if (socket) {
-      socket.on("field-updated", callback);
-    }
-  };
+    }) => {
+      if (socket && isConnected) {
+        socket.emit("field-update", data);
+      }
+    },
+    [isConnected, socket]
+  );
 
-  const offFieldUpdate = (
-    callback: (data: {
-      responseId: string;
-      fieldId: string;
-      value: string;
-      userId?: string;
-    }) => void
-  ) => {
-    if (socket) {
-      socket.off("field-updated", callback);
-    }
-  };
+  const onFieldUpdate = useCallback(
+    (
+      callback: (data: {
+        responseId: string;
+        fieldId: string;
+        value: string;
+        userId?: string;
+      }) => void
+    ) => {
+      if (socket) {
+        socket.on("field-updated", callback);
+      }
+    },
+    [socket]
+  );
+
+  const offFieldUpdate = useCallback(
+    (
+      callback: (data: {
+        responseId: string;
+        fieldId: string;
+        value: string;
+        userId?: string;
+      }) => void
+    ) => {
+      if (socket) {
+        socket.off("field-updated", callback);
+      }
+    },
+    [socket]
+  );
 
   const value: SocketContextType = {
     socket,
