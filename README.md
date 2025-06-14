@@ -37,8 +37,8 @@ A collaborative form filling system where multiple users can work together to fi
 
 ```bash
 # Clone repository
-git clone <repository-url>
-cd form-sync
+git clone https://github.com/undestined/collaborative-forms.git
+cd collaborative-forms
 
 # Install dependencies
 yarn install
@@ -77,7 +77,14 @@ Create `.env.local`:
 
 ```env
 DATABASE_URL=postgresql://formsync:formsync_password@localhost:5432/formsync
+
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# seed admin and a test user
+ADMIN_EMAIL=admin@formsync.com
+ADMIN_PASSWORD="#FormSync@2025"
+TEST_USER_EMAIL="user@formsync.com"
+TEST_USER_PASSWORD="#FormSyncUser@2025"
 ```
 
 ## Database Commands
@@ -160,7 +167,3 @@ docker-compose up -d --build
 3. Share form codes with users
 4. Users join and collaboratively fill forms
 5. See real-time updates from all collaborators
-
-## License
-
-MIT License
