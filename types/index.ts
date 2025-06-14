@@ -25,6 +25,7 @@ export interface FormField {
   options?: string[]; // For select, radio, checkbox options
   order: number;
   required: boolean;
+  value?: string; // Current field value
   created_at: Date;
   updated_at: Date;
 }

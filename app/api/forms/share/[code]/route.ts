@@ -19,9 +19,13 @@ export async function GET(
                 'id', form_fields.id,
                 'field_type', form_fields.field_type,
                 'label', form_fields.label,
-                'options', form_fields.options,
+                'options', CASE 
+                  WHEN form_fields.options IS NULL THEN NULL
+                  ELSE form_fields.options::json
+                END,
                 'order', form_fields.order,
-                'required', form_fields.required
+                'required', form_fields.required,
+                'value', form_fields.value
               )
               ORDER BY form_fields.order
             ) FILTER (WHERE form_fields.id IS NOT NULL),

@@ -11,7 +11,6 @@ export interface NextApiResponseServerIO extends NextApiResponse {
 
 export interface FieldUpdateData {
   formId: string;
-  responseId: string;
   fieldId: string;
   value: string;
   userId?: string;

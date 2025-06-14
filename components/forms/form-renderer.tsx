@@ -6,48 +6,71 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-import { Form as FormType, FormField as FormFieldType, FormResponse } from "@/types";
+import { Form as FormType, FormField as FormFieldType } from "@/types";
 
 interface FormRendererProps {
   form: FormType;
-  response?: FormResponse;
   onFieldChange?: (fieldId: string, value: string) => void;
-  onSubmit?: (values: Record<string, string | undefined>) => void | Promise<void>;
+  onSubmit?: (
+    values: Record<string, string | undefined>
+  ) => void | Promise<void>;
   isLoading?: boolean;
   collaborators?: { userId: string; email: string }[];
   editable?: boolean;
 }
 
-export function FormRenderer({ 
-  form, 
-  response, 
-  onFieldChange, 
-  onSubmit, 
+export function FormRenderer({
+  form,
+  onFieldChange,
+  onSubmit,
   isLoading = false,
   collaborators = [],
-  editable = true
+  editable = true,
 }: FormRendererProps) {
-
   // Create dynamic schema based on form fields
   const createSchema = () => {
-    const schemaFields: Record<string, z.ZodString | z.ZodOptional<z.ZodString>> = {};
-    
+    const schemaFields: Record<
+      string,
+      z.ZodString | z.ZodOptional<z.ZodString>
+    > = {};
+
     form.fields?.forEach((field: FormFieldType) => {
       let fieldSchema: z.ZodString;
-      
+
       switch (field.field_type) {
         case "email":
           fieldSchema = z.string().email("Please enter a valid email");
           break;
         case "number":
-          fieldSchema = z.string().regex(/^\d+$/, "Please enter a valid number");
+          fieldSchema = z
+            .string()
+            .regex(/^\d+$/, "Please enter a valid number");
           break;
         case "date":
           fieldSchema = z.string().min(1, "Please select a date");
@@ -55,19 +78,22 @@ export function FormRenderer({
         default:
           fieldSchema = z.string();
       }
-      
+
       if (!field.required) {
         schemaFields[field.id] = fieldSchema.optional();
       } else {
-        schemaFields[field.id] = fieldSchema.min(1, `${field.label} is required`);
+        schemaFields[field.id] = fieldSchema.min(
+          1,
+          `${field.label} is required`
+        );
       }
     });
-    
+
     return z.object(schemaFields);
   };
 
   const formSchema = createSchema();
-  
+
   // Initialize default values for all fields to prevent controlled/uncontrolled switching
   const getDefaultValues = () => {
     const defaults: Record<string, string> = {};
@@ -83,21 +109,15 @@ export function FormRenderer({
   });
 
   useEffect(() => {
-    if (response) {
-      const values: Record<string, string> = {};
-      // Initialize all fields with empty strings first
-      form.fields?.forEach((field: FormFieldType) => {
-        values[field.id] = "";
-      });
-      // Then override with actual values
-      response.field_values?.forEach((fv) => {
-        if (fv.field_id) {
-          values[fv.field_id] = fv.value || "";
-        }
-      });
-      formMethods.reset(values);
-    }
-  }, [response, formMethods, form.fields]);
+    const values: Record<string, string> = {};
+    // Initialize all fields with their current values or empty strings
+    form.fields?.forEach((field: FormFieldType) => {
+      values[field.id] = field.value || "";
+    });
+
+    // Reset form with current field values
+    formMethods.reset(values);
+  }, [form.fields, formMethods]);
 
   const handleFieldChange = (fieldId: string, value: string) => {
     onFieldChange?.(fieldId, value);
@@ -105,7 +125,7 @@ export function FormRenderer({
 
   const renderField = (field: FormFieldType) => {
     const fieldId = field.id;
-    
+
     return (
       <FormField
         key={fieldId}
@@ -133,7 +153,7 @@ export function FormRenderer({
                         disabled={!editable}
                       />
                     );
-                  
+
                   case "select":
                     return (
                       <Select
@@ -145,7 +165,9 @@ export function FormRenderer({
                         disabled={!editable}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                          <SelectValue
+                            placeholder={`Select ${field.label.toLowerCase()}`}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {field.options?.map((option, index) => (
@@ -156,12 +178,15 @@ export function FormRenderer({
                         </SelectContent>
                       </Select>
                     );
-                  
+
                   case "radio":
                     return (
                       <div className="space-y-2">
                         {field.options?.map((option, index) => (
-                          <div key={index} className="flex items-center space-x-2">
+                          <div
+                            key={index}
+                            className="flex items-center space-x-2"
+                          >
                             <input
                               type="radio"
                               id={`${fieldId}-${index}`}
@@ -185,7 +210,7 @@ export function FormRenderer({
                         ))}
                       </div>
                     );
-                  
+
                   case "checkbox":
                     return (
                       <div className="flex items-center space-x-2">
@@ -209,13 +234,19 @@ export function FormRenderer({
                         </label>
                       </div>
                     );
-                  
+
                   default:
                     return (
                       <Input
-                        type={field.field_type === "email" ? "email" : 
-                              field.field_type === "number" ? "number" : 
-                              field.field_type === "date" ? "date" : "text"}
+                        type={
+                          field.field_type === "email"
+                            ? "email"
+                            : field.field_type === "number"
+                            ? "number"
+                            : field.field_type === "date"
+                            ? "date"
+                            : "text"
+                        }
                         placeholder={`Enter ${field.label.toLowerCase()}`}
                         {...formField}
                         value={formField.value ?? ""}
@@ -256,18 +287,22 @@ export function FormRenderer({
             {collaborators.length > 0 && (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-xs">
-                  {collaborators.length} collaborator{collaborators.length > 1 ? 's' : ''}
+                  {collaborators.length} collaborator
+                  {collaborators.length > 1 ? "s" : ""}
                 </Badge>
               </div>
             )}
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <Form {...formMethods}>
-            <form onSubmit={formMethods.handleSubmit(handleSubmit)} className="space-y-6">
+            <form
+              onSubmit={formMethods.handleSubmit(handleSubmit)}
+              className="space-y-6"
+            >
               {form.fields?.map((field) => renderField(field))}
-              
+
               {onSubmit && editable && (
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={isLoading}>
@@ -279,7 +314,7 @@ export function FormRenderer({
           </Form>
         </CardContent>
       </Card>
-      
+
       {collaborators.length > 0 && (
         <Card className="mt-4">
           <CardHeader>

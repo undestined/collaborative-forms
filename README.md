@@ -1,178 +1,166 @@
-# FormSync - Collaborative Form Builder
+# FormSync
 
-A real-time collaborative form filling system built with Next.js, Socket.io, and PostgreSQL. Create forms and collaborate on filling them in real-time, similar to Google Docs but for structured forms.
+A collaborative form filling system where multiple users can work together to fill forms in real-time. Think Google Docs for structured forms.
 
 ## Features
 
-- **Real-time Collaboration**: Multiple users can fill forms simultaneously with live updates
-- **Form Builder**: Drag-and-drop interface for creating custom forms
-- **User Authentication**: Secure login and session management
-- **PostgreSQL Database**: Robust data storage with Knex.js ORM
-- **TypeScript**: Full type safety across the application
-- **Socket.io**: Real-time bidirectional communication
-- **shadcn/ui**: Modern, accessible UI components
+- Real-time collaborative form editing
+- Form builder with dynamic field types (text, email, select, checkbox, radio, etc.)
+- User authentication and role-based access
+- Shareable form links with unique codes
+- Live user presence indicators
+- Conflict-free field updates
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: Next.js API Routes, Socket.io, Custom TypeScript server
-- **Database**: PostgreSQL with Knex.js migrations
-- **Real-time**: Socket.io with room-based architecture
+**Frontend:**
+- Next.js 15+ (App Router)
+- TypeScript
+- Tailwind CSS + shadcn/ui components
+- Socket.io-client for real-time updates
+- React Hook Form + Zod validation
 
-## Getting Started
+**Backend:**
+- Next.js API Routes
+- Custom Socket.io server
+- PostgreSQL database
+- Knex.js for migrations and queries
+- JWT authentication
 
-### Prerequisites
+**Infrastructure:**
+- Docker & Docker Compose
+- Node.js 20+
 
-- Node.js 18+
-- PostgreSQL (or use Docker)
-- Yarn package manager
+## Quick Start
 
-### Option 1: Local Development with Docker (Recommended)
+### With Docker (Recommended)
 
-1. **Clone and setup**:
-   ```bash
-   git clone <repository-url>
-   cd form-sync
-   yarn install
-   ```
+```bash
+# Clone repository
+git clone <repository-url>
+cd form-sync
 
-2. **Start with Docker**:
-   ```bash
-   docker-compose up
-   ```
-   
-   This will:
-   - Start PostgreSQL database
-   - Run database migrations and seeds
-   - Start the application on http://localhost:3000
+# Install dependencies
+yarn install
 
-### Option 2: Local Development with Local PostgreSQL
+# Start with Docker
+docker-compose up
+```
 
-1. **Setup database**:
-   ```bash
-   # Create PostgreSQL database named 'formsync'
-   createdb formsync
-   
-   # Or update DATABASE_URL in .env.development
-   ```
+Access the application at http://localhost:3000
 
-2. **Install dependencies**:
-   ```bash
-   yarn install
-   ```
+### Local Development
 
-3. **Run database migrations**:
-   ```bash
-   yarn db:migrate
-   yarn db:seed
-   ```
+**Prerequisites:**
+- Node.js 20+
+- PostgreSQL
+- Yarn
 
-4. **Start development server**:
-   ```bash
-   yarn dev
-   ```
+```bash
+# Install dependencies
+yarn install
 
-5. **Open application**:
-   Navigate to [http://localhost:3000](http://localhost:3000)
+# Set up database
+createdb formsync
+
+# Run migrations and seeds
+yarn db:migrate
+yarn db:seed
+
+# Start development server
+yarn dev
+```
 
 ## Environment Variables
 
-Create `.env.development` for local development:
+Create `.env.local`:
 
 ```env
 DATABASE_URL=postgresql://formsync:formsync_password@localhost:5432/formsync
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-## Available Scripts
+## Database Commands
 
 ```bash
-# Development
-yarn dev              # Start development server with TypeScript
-yarn build            # Build for production
-yarn start            # Start production server
+yarn db:migrate              # Run pending migrations
+yarn db:rollback             # Rollback last migration
+yarn db:seed                 # Populate with sample data
+yarn db:make-migration <name> # Create new migration
+```
 
-# Database
-yarn db:migrate       # Run database migrations
-yarn db:rollback      # Rollback last migration
-yarn db:seed          # Run database seeds
-yarn db:make-migration <name>  # Create new migration
-yarn db:make-seed <name>       # Create new seed
+## Development Scripts
 
-# Utilities
-yarn lint             # Run ESLint
+```bash
+yarn dev       # Start development server
+yarn build     # Build for production
+yarn start     # Start production server
+yarn lint      # Run ESLint
 ```
 
 ## Database Schema
 
-- **users**: User accounts and authentication
-- **forms**: Form definitions and metadata
-- **form_fields**: Individual form field configurations
-- **form_responses**: Response instances for forms
-- **field_values**: Individual field values with collaboration tracking
+- `users` - User accounts and authentication
+- `forms` - Form definitions and metadata  
+- `form_fields` - Individual field configurations
+- `form_responses` - Form response instances
+- `field_values` - Collaborative field values with user tracking
 
 ## Architecture
 
-### Real-time Collaboration
+**Real-time Collaboration:**
 - Socket.io rooms (one per form)
-- Field-level updates to minimize conflicts
-- Optimistic updates with server synchronization
-- User presence indicators
+- Field-level updates to prevent conflicts
+- Optimistic updates with server sync
+- Last-write-wins conflict resolution
 
-### API Routes
-- `GET/POST /api/forms` - Form CRUD operations
-- `GET/POST /api/auth` - Authentication endpoints
-- Socket.io events for real-time updates
+**API Structure:**
+- `GET/POST /api/forms` - Form CRUD
+- `GET /api/forms/share/[code]` - Access shared forms
+- `POST /api/forms/[id]/responses` - Create responses
+- `POST /api/forms/[id]/responses/[responseId]/submit` - Submit values
+- `GET/POST /api/auth/*` - Authentication
 
-### Project Structure
+## Project Structure
+
 ```
-├── app/                    # Next.js App Router pages
-├── components/ui/          # shadcn/ui components
-├── components/forms/       # Custom form components
-├── lib/
-│   ├── db.ts              # Knex database configuration
-│   ├── socket.ts          # Socket.io client setup
-│   └── auth.ts            # Authentication utilities
-├── migrations/            # Database migrations
-├── seeds/                 # Database seeds
-├── types/                 # TypeScript type definitions
-└── server.ts              # Custom Socket.io server
+├── app/                    # Next.js pages and API routes
+├── components/             # React components
+│   ├── forms/             # Form-specific components
+│   └── ui/                # shadcn/ui components
+├── lib/                   # Shared utilities
+│   ├── db.ts             # Database configuration
+│   ├── socket-context.tsx # Socket.io client
+│   └── validations/      # Zod schemas
+├── migrations/           # Database migrations
+├── seeds/               # Database seeds
+├── types/               # TypeScript definitions
+└── server.ts           # Custom Socket.io server
 ```
 
-## Development Workflow
+## Deployment
 
-1. **Create migrations**: `yarn db:make-migration add_new_feature`
-2. **Run migrations**: `yarn db:migrate` 
-3. **Add API routes**: Create in `app/api/`
-4. **Build UI components**: Use shadcn/ui patterns
-5. **Add real-time features**: Extend Socket.io events
-6. **Test**: Access http://localhost:3000
+### Docker Production
 
-## Production Deployment
-
-### Docker Deployment (Recommended)
 ```bash
-# Build and start production containers
-docker-compose up --build
-
-# Or for detached mode
 docker-compose up -d --build
 ```
 
 ### Manual Deployment
+
 1. Build the application: `yarn build`
 2. Set production environment variables
 3. Run migrations: `yarn db:migrate`
-4. Start server: `yarn start`
+4. Start: `yarn start`
 
-## Contributing
+## Usage
 
-1. Fork the repository
-2. Create a feature branch
-3. Make changes with proper TypeScript types
-4. Test locally with `yarn dev`
-5. Submit a pull request
+1. Register/login as admin
+2. Create forms with custom fields
+3. Share form codes with users
+4. Users join and collaboratively fill forms
+5. See real-time updates from all collaborators
 
 ## License
 
-[Add your license here]
+MIT License

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "../../../../lib/db";
-import { updateFormSchema, type FormFieldData } from "@/lib/validations/forms";
+import { updateFormSchema } from "@/lib/validations/forms";
 import { withAuth } from "@/lib/middleware/auth";
 
 export async function GET(
@@ -33,9 +33,13 @@ export async function GET(
                 'id', form_fields.id,
                 'field_type', form_fields.field_type,
                 'label', form_fields.label,
-                'options', form_fields.options,
+                'options', CASE 
+                  WHEN form_fields.options IS NULL THEN NULL
+                  ELSE form_fields.options::json
+                END,
                 'order', form_fields.order,
-                'required', form_fields.required
+                'required', form_fields.required,
+                'value', form_fields.value
               )
               ORDER BY form_fields.order
             ) FILTER (WHERE form_fields.id IS NOT NULL),
@@ -116,13 +120,21 @@ export async function PUT(
         await trx("form_fields").where("form_id", id).del();
         
         if (fields.length > 0) {
-          const formFields = fields.map((field: FormFieldData, index: number) => ({
+          const formFields = fields.map((field: {
+            field_type: string;
+            label: string;
+            options?: string[];
+            order?: number;
+            required?: boolean;
+            value?: string;
+          }, index: number) => ({
             form_id: id,
             field_type: field.field_type,
             label: field.label,
             options: field.options ? JSON.stringify(field.options) : null,
             order: field.order || index,
             required: field.required || false,
+            value: field.value || null,
           }));
 
           await trx("form_fields").insert(formFields);
@@ -142,9 +154,13 @@ export async function PUT(
                   'id', form_fields.id,
                   'field_type', form_fields.field_type,
                   'label', form_fields.label,
-                  'options', form_fields.options,
+                  'options', CASE 
+                    WHEN form_fields.options IS NULL THEN NULL
+                    ELSE form_fields.options::json
+                  END,
                   'order', form_fields.order,
-                  'required', form_fields.required
+                  'required', form_fields.required,
+                  'value', form_fields.value
                 )
                 ORDER BY form_fields.order
               ) FILTER (WHERE form_fields.id IS NOT NULL),

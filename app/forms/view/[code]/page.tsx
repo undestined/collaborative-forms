@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { FormRenderer } from "@/components/forms/form-renderer";
-import { Form, FormResponse, FieldValue } from "@/types";
+import { Form } from "@/types";
 import { SocketProvider, useSocketContext } from "@/lib/socket-context";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -14,7 +14,6 @@ function ShareFormContent() {
     isConnected,
     joinForm,
     leaveForm,
-    emitFieldUpdate,
     collaborators,
     onFieldUpdate,
     offFieldUpdate,
@@ -22,9 +21,7 @@ function ShareFormContent() {
   const { user } = useAuth();
 
   const [form, setForm] = useState<Form | null>(null);
-  const [response, setResponse] = useState<FormResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchForm = useCallback(async () => {
@@ -36,9 +33,6 @@ function ShareFormContent() {
       if (response.ok) {
         const formData = await response.json();
         setForm(formData);
-
-        // Create a new response for this user
-        await createResponse(formData.id);
       } else if (response.status === 404) {
         setError("Form not found. Please check the share code and try again.");
       } else {
@@ -74,43 +68,23 @@ function ShareFormContent() {
   // Listen for field updates from other users
   useEffect(() => {
     const handleFieldUpdate = (data: {
-      responseId: string;
       fieldId: string;
       value: string;
       userId?: string;
     }) => {
       console.log("Received field update:", data);
-      setResponse((prev) => {
+      setForm((prev) => {
         if (!prev) return prev;
 
-        const updatedFieldValues = prev.field_values || [];
-        const existingIndex = updatedFieldValues.findIndex(
-          (fv: FieldValue) => fv.field_id === data.fieldId
+        const updatedFields = (prev.fields || []).map(field => 
+          field.id === data.fieldId 
+            ? { ...field, value: data.value }
+            : field
         );
-
-        if (existingIndex >= 0) {
-          updatedFieldValues[existingIndex] = {
-            ...updatedFieldValues[existingIndex],
-            value: data.value,
-            updated_at: new Date(),
-          };
-        } else {
-          updatedFieldValues.push({
-            id:
-              Math.random().toString(36).substring(2, 15) +
-              Math.random().toString(36).substring(2, 15),
-            response_id: data.responseId,
-            field_id: data.fieldId,
-            value: data.value,
-            updated_by: data.userId,
-            created_at: new Date(),
-            updated_at: new Date(),
-          });
-        }
 
         return {
           ...prev,
-          field_values: updatedFieldValues,
+          fields: updatedFields,
         };
       });
     };
@@ -122,90 +96,14 @@ function ShareFormContent() {
     };
   }, [onFieldUpdate, offFieldUpdate]);
 
-  const createResponse = async (formId: string) => {
-    try {
-      const response = await fetch(`/api/forms/${formId}/responses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
 
-      if (response.ok) {
-        const responseData = await response.json();
-        setResponse(responseData);
-      }
-    } catch (error) {
-      console.error("Error creating response:", error);
-    }
+  const handleFieldChange = () => {
+    // View mode is read-only, no field changes allowed
   };
 
-  const handleFieldChange = (fieldId: string, value: string) => {
-    if (!response || !form) return;
-
-    // Emit real-time update via Socket.io
-    emitFieldUpdate({
-      formId: form.id,
-      responseId: response.id,
-      fieldId,
-      value,
-      userId: "temp-user-id", // TODO: Replace with actual user ID
-    });
-
-    // Update local state
-    setResponse((prev) => {
-      if (!prev) return prev;
-
-      const updatedFieldValues = prev.field_values || [];
-      const existingIndex = updatedFieldValues.findIndex(
-        (fv: FieldValue) => fv.field_id === fieldId
-      );
-
-      if (existingIndex >= 0) {
-        updatedFieldValues[existingIndex] = {
-          ...updatedFieldValues[existingIndex],
-          value,
-          updated_at: new Date(),
-        };
-      } else {
-        updatedFieldValues.push({
-          id:
-            Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15),
-          response_id: response.id,
-          field_id: fieldId,
-          value,
-          updated_by: "temp-user", // TODO: Replace with actual user ID
-          created_at: new Date(),
-          updated_at: new Date(),
-        });
-      }
-
-      return {
-        ...prev,
-        field_values: updatedFieldValues,
-      };
-    });
-  };
-
-  // Form submission handler
-  const handleSubmit = async (values: Record<string, string | undefined>) => {
-    if (!form || !response) return;
-
-    try {
-      setIsSubmitting(true);
-
-      // TODO: Implement form submission logic
-      console.log("Form submitted:", values);
-
-      // Show success message
-      alert("Form submitted successfully!");
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Failed to submit form. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  // Form submission handler (disabled in view mode)
+  const handleSubmit = async () => {
+    // View mode doesn't allow submission
   };
 
   if (isLoading) {
@@ -260,10 +158,9 @@ function ShareFormContent() {
     <div className="container mx-auto py-8 px-4">
       <FormRenderer
         form={form}
-        response={response ?? undefined}
         onFieldChange={handleFieldChange}
         onSubmit={handleSubmit}
-        isLoading={isSubmitting}
+        isLoading={false}
         collaborators={collaborators}
         editable={false}
       />

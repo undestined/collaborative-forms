@@ -16,7 +16,6 @@ interface SocketContextType {
   leaveForm: (formId: string, userId?: string) => void;
   emitFieldUpdate: (data: {
     formId: string;
-    responseId: string;
     fieldId: string;
     value: string;
     userId?: string;
@@ -24,7 +23,6 @@ interface SocketContextType {
   collaborators: { userId: string; email: string }[];
   onFieldUpdate: (
     callback: (data: {
-      responseId: string;
       fieldId: string;
       value: string;
       userId?: string;
@@ -32,7 +30,6 @@ interface SocketContextType {
   ) => void;
   offFieldUpdate: (
     callback: (data: {
-      responseId: string;
       fieldId: string;
       value: string;
       userId?: string;
@@ -136,7 +133,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const emitFieldUpdate = useCallback(
     (data: {
       formId: string;
-      responseId: string;
       fieldId: string;
       value: string;
       userId?: string;
@@ -151,7 +147,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const onFieldUpdate = useCallback(
     (
       callback: (data: {
-        responseId: string;
         fieldId: string;
         value: string;
         userId?: string;
@@ -167,7 +162,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const offFieldUpdate = useCallback(
     (
       callback: (data: {
-        responseId: string;
         fieldId: string;
         value: string;
         userId?: string;

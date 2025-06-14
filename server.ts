@@ -50,37 +50,16 @@ app.prepare().then(() => {
     // Handle field updates
     socket.on("field-update", async (data: FieldUpdateData) => {
       try {
-        // Update the database
-        const existingValue = await db("field_values")
-          .where({
-            response_id: data.responseId,
-            field_id: data.fieldId,
-          })
-          .first();
-
-        if (existingValue) {
-          await db("field_values")
-            .where({
-              response_id: data.responseId,
-              field_id: data.fieldId,
-            })
-            .update({
-              value: data.value,
-              updated_by: data.userId || "anonymous",
-              updated_at: new Date(),
-            });
-        } else {
-          await db("field_values").insert({
-            response_id: data.responseId,
-            field_id: data.fieldId,
+        // Update the form field value directly
+        await db("form_fields")
+          .where("id", data.fieldId)
+          .update({
             value: data.value,
-            updated_by: data.userId || "anonymous",
+            updated_at: new Date(),
           });
-        }
 
         // Broadcast to all users in the form room except sender
         socket.to(data.formId).emit("field-updated", {
-          responseId: data.responseId,
           fieldId: data.fieldId,
           value: data.value,
           userId: data.userId,
