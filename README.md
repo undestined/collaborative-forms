@@ -37,8 +37,8 @@ A collaborative form filling system where multiple users can work together to fi
 
 ```bash
 # Clone repository
-git clone https://github.com/undestined/collaborative-forms.git
-cd collaborative-forms
+git clone https://github.com/undestined/form-sync.git
+cd form-sync
 
 # Install dependencies
 yarn install
